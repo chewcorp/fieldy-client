@@ -17,11 +17,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-try:
-    import tomllib
-except ModuleNotFoundError:  # Python < 3.11
-    tomllib = None
-
 ROOT = Path(__file__).resolve().parent.parent
 
 # Runtime code must import nothing outside the standard library (AGENTS.md,
@@ -146,25 +141,6 @@ def check_no_committed_key(files: list[Path]) -> bool:
     return report("no API key in a tracked file", not offenders, "; ".join(offenders))
 
 
-def check_declared_dependencies() -> bool:
-    """Imports are only half the surface; installing must pull nothing either."""
-    pyproject = ROOT / "pyproject.toml"
-    if not pyproject.exists():
-        return report("declared dependencies", True, "no pyproject.toml yet")
-    if tomllib is None:
-        return report("declared dependencies", True, "needs Python 3.11+ to parse")
-    try:
-        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
-    except tomllib.TOMLDecodeError as exc:
-        return report("declared dependencies", False, f"pyproject.toml: {exc}")
-
-    offenders = [
-        f"runtime dependency {dep!r}"
-        for dep in data.get("project", {}).get("dependencies", [])
-    ]
-    return report("declared dependencies", not offenders, "; ".join(offenders))
-
-
 def run_pytest() -> bool:
     tests = sorted((ROOT / "tests").glob("test_*.py")) if (ROOT / "tests").is_dir() else []
     if not tests:
@@ -180,7 +156,6 @@ def main() -> int:
         check_stdlib_only(files),
         check_fixtures_parse(files),
         check_no_committed_key(files),
-        check_declared_dependencies(),
         run_pytest(),
     ]
     ok = all(results)
