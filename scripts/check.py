@@ -37,10 +37,13 @@ KEY_ASSIGNMENT = re.compile(
 KEY_LITERAL = re.compile(r"sk-fieldy-[A-Za-z0-9_-]{8,}")
 # Values that are obviously not a key: placeholders and environment lookups.
 NOT_A_KEY = re.compile(
-    r"^(<|\$|\{|os\.|getenv|environ|none|null|\.\.\.)|"
+    r"^(<|\$|\{|os\.|getenv|environ|none|null|\.\.\.|\u2026)|"
     r"(your|example|placeholder|dummy|fake|xxx|test)",
     re.IGNORECASE,
 )
+# An issued key is long. A short literal is prose or a placeholder, not a
+# credential; the prefix rule above catches real keys whatever their spelling.
+MIN_KEY_LENGTH = 12
 
 
 def report(name: str, ok: bool, detail: str = "") -> bool:
@@ -129,7 +132,7 @@ def check_no_committed_key(files: list[Path]) -> bool:
                 match = KEY_ASSIGNMENT.search(line)
                 if match:
                     value = match.group("value").strip("\"'`")
-                    if value and not NOT_A_KEY.search(value):
+                    if len(value) >= MIN_KEY_LENGTH and not NOT_A_KEY.search(value):
                         hit = "key assigned to a literal"
             if hit:
                 offenders.append(f"{path.relative_to(ROOT)}:{lineno} {hit}")

@@ -90,3 +90,19 @@ what a static check can see.
 `.gitignore` was added by the first scaffold commit without appearing in either
 layout table, leaving the scope contract inconsistent from the start. It is now
 listed.
+
+## D7 — The key scan tolerates prose about keys
+
+**2026-09-12, CI failure on PR #1.** The hardened scan from D6 failed CI on
+D6's own text: the prose quoting the vulnerable spelling was read as a live
+assignment. Two gaps, both in the checker rather than the prose.
+
+A Unicode ellipsis was not in the placeholder set, though its ASCII spelling
+was. And any non-empty value counted, so a one-character value could trip the
+scan. A literal shorter than twelve characters is now treated as prose or a
+placeholder; the issued-key prefix rule still catches a real key whatever its
+spelling or length, so detection is unchanged.
+
+The D6 text stays as written. It is now a live regression case for the
+false-positive path, sitting in the tree where any future change to the scan
+must keep it passing.
