@@ -200,7 +200,11 @@ def main(argv=None):
                 print(f"{row['name']:<{nw}}  {row['method']:<{mw}}  {row['path']}  {','.join(row['params'])}")
             return 0
         if cmd == "summaries":
-            result = FieldyClient().summaries(**_flags(argv[1:]))
+            flags = _flags(argv[1:])
+            missing = [name for name in ("startTime", "endTime") if name not in flags]
+            if missing:
+                raise FieldyError("summaries requires --startTime and --endTime")
+            result = FieldyClient().summaries(**flags)
         elif cmd == "call":
             if len(argv) < 2 or argv[1].startswith("--"):
                 raise FieldyError("call requires an op name")

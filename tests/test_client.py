@@ -201,6 +201,15 @@ def test_cli_ops_does_not_need_a_key(monkeypatch, capsys):
     assert "/conversations" in out
 
 
+def test_cli_summaries_requires_time_window(monkeypatch, capsys):
+    monkeypatch.setenv("FIELDY_API_KEY", "cli-key")
+    code = fieldy_client.main(["summaries"])
+    assert code == 1
+    err = capsys.readouterr().err
+    assert "error:" in err
+    assert "startTime" in err
+
+
 def test_cli_summaries_prints_projection(monkeypatch, capsys):
     payload = _load("conversations_list.json")
     opener = FakeOpener([(200, payload, None)])
