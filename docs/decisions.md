@@ -57,3 +57,12 @@ Hence the precedence split in `AGENTS.md`: CCP-629 owns scope, non-goals, and
 acceptance criteria; the published spec owns API facts. Divergence between
 them is recorded, not escalated. The client's shape is unaffected — the
 conversation object carries the fields the design wanted from a "memory".
+
+## D5 — The generated catalog is allowed to be the bulk of the module
+
+**2026-09-12, implementation.** The scope guard asks for one module of
+roughly 150 lines. Public v2 has 26 operations. Putting them in `OPS` at one
+line each is ~30 lines of generated catalog, which is why the file sits a
+little over that number. The handwritten client (auth, call, 429 retry,
+summaries projection, CLI) stays one class. Do not split into a package to
+chase the line count; regenerate `OPS` with `tools/refresh_ops.py`.

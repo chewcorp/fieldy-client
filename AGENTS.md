@@ -72,12 +72,11 @@ why.
 
 - Python, standard library only at runtime (`urllib.request` + `json`).
   `scripts/check.py` enforces this for imports in `fieldy_client.py` and
-  `smoke.py`. `pytest` is the only development dependency. Neither the
-  dependency metadata nor the pytest-only rule is mechanically checked.
-- When you add `pyproject.toml`, add a check to `scripts/check.py` that
-  `project.dependencies` and every `project.optional-dependencies` group are
-  empty — extras become runtime requirements when installed. Write it against
-  the real file, and make it fail rather than skip when it cannot parse.
+  `smoke.py`. `pytest` is the only development dependency; it is installed by
+  CI and is not declared in `pyproject.toml`. Empty `project.dependencies`
+  and empty `project.optional-dependencies` groups are checked against the
+  real file and fail rather than skip when the file cannot be parsed. The
+  pytest-only rule is not mechanically checked.
 - Keep every script runnable as `python <path>` on any OS — `scripts/check.py`
   at the repo root, `smoke.py`, `tools/refresh_ops.py`. No shell-only steps,
   no hard-coded POSIX paths.

@@ -1,0 +1,6 @@
+{
+  "defined": false,
+  "code": "UNAUTHORIZED",
+  "status": 401,
+  "message": "No recognised credentials"
+}
