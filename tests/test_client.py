@@ -166,6 +166,19 @@ def test_retry_wait_parses_http_date():
     assert fieldy_client._retry_wait("Sat, 12 Sep 2026 10:59:00 GMT", now=now) == 0
     assert fieldy_client._retry_wait("2") == 2
     assert fieldy_client._retry_wait(None) == 0
+    frac = datetime(2026, 9, 12, 11, 0, 0, 500000, tzinfo=timezone.utc)
+    assert fieldy_client._retry_wait(header, now=frac) == 6.5
+
+
+def test_timeout_becomes_fieldy_error():
+    def boom(req, timeout=None):
+        raise TimeoutError("timed out")
+
+    client = fieldy_client.FieldyClient(api_key="test-key", urlopen=boom)
+    with pytest.raises(fieldy_client.FieldyError) as exc:
+        client.call("user.get")
+    assert exc.value.status is None
+    assert "timed out" in str(exc.value)
 
 
 def test_summaries_projects_server_summary_field():

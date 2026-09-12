@@ -76,10 +76,6 @@ def ops():
     ]
 
 
-def _auth_headers(api_key):
-    return {"Authorization": f"Bearer {api_key}", "Accept": "application/json"}
-
-
 def _parse_body(raw):
     if not raw:
         return {}
@@ -107,7 +103,7 @@ def _retry_wait(raw, now=None):
     if when.tzinfo is None:
         when = when.replace(tzinfo=timezone.utc)
     current = now or datetime.now(timezone.utc)
-    return max(0, int((when - current).total_seconds()))
+    return max(0, (when - current).total_seconds())
 
 
 def _fill_path(path, params):
@@ -129,6 +125,9 @@ class FieldyClient:
         self.base_url = base_url.rstrip("/")
         self._urlopen = urlopen if urlopen is not None else globals()["urlopen"]
         self._sleep = sleep if sleep is not None else time.sleep
+
+    def _auth_headers(self):
+        return {"Authorization": f"Bearer {self.api_key}", "Accept": "application/json"}
 
     def ops(self):
         return ops()
@@ -158,7 +157,7 @@ class FieldyClient:
             raise FieldyError(f"unknown op {op_name!r}")
         method, path, _params, _doc = OPS[op_name]
         path, leftover = _fill_path(path, params)
-        url, headers, data = self.base_url + path, _auth_headers(self.api_key), None
+        url, headers, data = self.base_url + path, self._auth_headers(), None
         if method in ("GET", "HEAD"):
             if leftover:
                 url += "?" + urllib.parse.urlencode(leftover, doseq=True)
@@ -182,6 +181,8 @@ class FieldyClient:
                     self._sleep(_retry_wait(raw))
                     continue
                 raise FieldyError(f"{exc.code} {body}", status=exc.code, body=body) from exc
+            except TimeoutError as exc:
+                raise FieldyError(str(exc)) from exc
             except urllib.error.URLError as exc:
                 raise FieldyError(str(exc.reason)) from exc
 
