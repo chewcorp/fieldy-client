@@ -157,6 +157,17 @@ def test_429_retries_once_honouring_retry_after():
     assert len(opener.requests) == 2
 
 
+def test_retry_wait_parses_http_date():
+    from datetime import datetime, timezone
+
+    now = datetime(2026, 9, 12, 11, 0, 0, tzinfo=timezone.utc)
+    header = "Sat, 12 Sep 2026 11:00:07 GMT"
+    assert fieldy_client._retry_wait(header, now=now) == 7
+    assert fieldy_client._retry_wait("Sat, 12 Sep 2026 10:59:00 GMT", now=now) == 0
+    assert fieldy_client._retry_wait("2") == 2
+    assert fieldy_client._retry_wait(None) == 0
+
+
 def test_summaries_projects_server_summary_field():
     payload = _load("conversations_list.json")
     client, opener, _ = _client([(200, payload, None)])

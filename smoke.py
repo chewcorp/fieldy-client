@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Hand-run live check against api.fieldy.ai. Never invoked by CI.
 
-Usage: FIELDY_API_KEY=<your-key> python smoke.py
+Usage: FIELDY_API_KEY=YOUR_FIELDY_API_KEY python smoke.py
 """
 
 from __future__ import annotations

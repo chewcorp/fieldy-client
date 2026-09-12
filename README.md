@@ -7,7 +7,7 @@ Thin stdlib wrapper around Fieldy public API v2. No MCP.
 Create a key in the Fieldy app: Settings → Developer Settings. Prefix `sk-fieldy-`.
 
 ```bash
-export FIELDY_API_KEY=<your-key>
+export FIELDY_API_KEY="YOUR_FIELDY_API_KEY"
 ```
 
 The client sends `Authorization: Bearer $FIELDY_API_KEY`. Pass `api_key=` to the constructor in tests.

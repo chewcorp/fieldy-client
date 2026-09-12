@@ -7,6 +7,7 @@ Summaries: ``FieldyClient.summaries(startTime, endTime)``.
 
 from __future__ import annotations
 
+import email.utils
 import json
 import os
 import re
@@ -15,6 +16,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 
 DEFAULT_BASE = "https://api.fieldy.ai/api/public/v2"
 TIMEOUT = 30
@@ -88,6 +90,26 @@ def _parse_body(raw):
         return text
 
 
+def _retry_wait(raw, now=None):
+    """Seconds to sleep for Retry-After: delta-seconds or HTTP-date."""
+    if raw is None or raw == "":
+        return 0
+    try:
+        return max(0, int(raw))
+    except (TypeError, ValueError):
+        pass
+    try:
+        when = email.utils.parsedate_to_datetime(raw)
+    except (TypeError, ValueError, OverflowError):
+        return 0
+    if when is None:
+        return 0
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=timezone.utc)
+    current = now or datetime.now(timezone.utc)
+    return max(0, int((when - current).total_seconds()))
+
+
 def _fill_path(path, params):
     leftover = dict(params)
     filled = path
@@ -157,10 +179,7 @@ class FieldyClient:
                 if exc.code == 429 and not retried:
                     retried = True
                     raw = exc.headers.get("Retry-After") if exc.headers else None
-                    try:
-                        self._sleep(int(raw or 0))
-                    except (TypeError, ValueError):
-                        self._sleep(0)
+                    self._sleep(_retry_wait(raw))
                     continue
                 raise FieldyError(f"{exc.code} {body}", status=exc.code, body=body) from exc
             except urllib.error.URLError as exc:
