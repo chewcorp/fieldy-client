@@ -26,9 +26,12 @@ Verification is a recommendation; it does not close the work item.
 
 Criteria 1 and 3 describe behaviour against a live service. `scripts/check.py`
 runs offline against recorded fixtures, so a green run evidences the client's
-internal behaviour and nothing about the real API. Only a hand-run `smoke.py`
-against `api.fieldy.ai` with a real key does that — from a host with direct
-egress, since the agent sandbox proxy refuses the host.
+internal behaviour and nothing about the real API.
+
+Only a hand-run `smoke.py` against `api.fieldy.ai` with a real key does that.
+Egress is available from a normal developer host and from the GitHub Actions
+runner, so the blocker is the key, not the network: CI holds no API key and is
+not being given one.
 
 Record such a run as: who ran it, when, against which base URL, and what came
 back. Absent that, the honest status for those criteria is **unproven**, not

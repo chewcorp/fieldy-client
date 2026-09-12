@@ -72,10 +72,15 @@ which table it belongs in and why before you add it.
   `_auth_headers()` method so the format is a one-line change.
 - Never commit an API key, nor a fixture you have not read. Recorded responses
   carry real conversation content: scrub them before they are committed.
-- Assume no network. `api.fieldy.ai` is refused by the agent sandbox proxy
-  (403 on CONNECT) and the Fieldy MCP server has returned 429. Checks, tests,
-  and CI must pass offline; `smoke.py` is the only thing permitted to need
-  egress, and a human runs it.
+- Tests and CI stay offline and deterministic: they run against recorded
+  fixtures, never the live API, because CI holds no API key. That is a design
+  choice, not an environment limit — this host and the GitHub Actions runner
+  both reach `api.fieldy.ai`. Use that egress to resolve facts and to run
+  `smoke.py`; do not wire a live call into `scripts/check.py`.
+- Some agent sandboxes do refuse `api.fieldy.ai` (403 on CONNECT), and the
+  Fieldy MCP server has returned 429. If you cannot reach the host, that is
+  your environment, not the repository's assumption — say so and escalate
+  rather than guessing at a response shape.
 - Do not push to `main`. Branch from the work item's `gitBranchName` and open
   a pull request.
 
