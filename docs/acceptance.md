@@ -16,11 +16,11 @@ Verification is a recommendation; it does not close the work item.
 
 | # | Criterion (abbreviated) | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Thin client, documented auth via API key / env var, no MCP dependency | unproven | — |
-| 2 | Agent self-discovery: OpenAPI-driven op list or static method catalog | unproven | — |
-| 3 | At least one summary-generating call path agents can invoke | unproven | — |
-| 4 | README covers auth → discover → call in one screen or less | unproven | — |
-| 5 | Non-goals respected: no governance framework, no multi-service platform, no MCP rewrite | unproven | — |
+| 1 | Thin client, documented auth via API key / env var, no MCP dependency | unproven | Offline: `FIELDY_API_KEY` / `api_key=`, `_auth_headers()` sends `Authorization: Bearer`, `scripts/check.py` stdlib-only scan, no MCP import. Live `smoke.py` not run in this environment (no key). |
+| 2 | Agent self-discovery: OpenAPI-driven op list or static method catalog | pass | `python -m fieldy_client ops` prints the static `OPS` catalog (26 ops from the published spec). `ops()` needs no key. `tools/refresh_ops.py` regenerates the dict from `https://api.fieldy.ai/docs`. |
+| 3 | At least one summary-generating call path agents can invoke | unproven | Offline: `FieldyClient.summaries(startTime, endTime)` projects `{id, title, summary, started_at, locked}` from `GET /conversations` (fixture `tests/fixtures/conversations_list.json`). Live `smoke.py` not run (no key). |
+| 4 | README covers auth → discover → call in one screen or less | pass | `README.md` is three headings (Auth, Discover, Call) plus one Python and one CLI block. |
+| 5 | Non-goals respected: no governance framework, no multi-service platform, no MCP rewrite | pass | One module `fieldy_client.py`, stdlib `urllib`, no plugin/async/models/cache. `scripts/check.py` rejects third-party runtime imports and non-empty `project.dependencies`. |
 
 ## Evidence that CI cannot supply
 
@@ -36,3 +36,9 @@ not being given one.
 Record such a run as: who ran it, when, against which base URL, and what came
 back. Absent that, the honest status for those criteria is **unproven**, not
 pass.
+
+Unauthenticated observation, 2026-09-12, this implementation session:
+`GET https://api.fieldy.ai/api/public/v2/user/me` with no key (and with a
+non-issued placeholder) returns `401 {"code":"UNAUTHORIZED","message":"No
+recognised credentials"}`. That confirms the host and auth scheme, not a
+successful summary call.

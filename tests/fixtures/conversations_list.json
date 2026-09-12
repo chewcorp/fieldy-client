@@ -1,0 +1,47 @@
+{
+  "items": [
+    {
+      "id": "conv_open",
+      "title": "Standup",
+      "summary": "Agreed to ship a thin Fieldy API wrapper.",
+      "locked": false,
+      "content": "Notes about the wrapper.",
+      "startTime": "2026-09-11T09:00:00Z",
+      "endTime": "2026-09-11T09:30:00Z",
+      "type": "FULL",
+      "keywords": ["wrapper"],
+      "speakers": ["Ada"],
+      "memorySpeakers": ["Ada"],
+      "quotes": [],
+      "location": null,
+      "locationId": null,
+      "templateId": null,
+      "memoryTemplateId": null,
+      "recommendedTemplateIds": null,
+      "calendarEventId": null,
+      "updatedAt": "2026-09-11T09:31:00Z"
+    },
+    {
+      "id": "conv_locked",
+      "title": "Older chat",
+      "summary": null,
+      "locked": true,
+      "content": null,
+      "startTime": "2026-08-01T10:00:00Z",
+      "endTime": "2026-08-01T10:20:00Z",
+      "type": "BRIEF",
+      "keywords": [],
+      "speakers": [],
+      "memorySpeakers": [],
+      "quotes": [],
+      "location": null,
+      "locationId": null,
+      "templateId": null,
+      "memoryTemplateId": null,
+      "recommendedTemplateIds": null,
+      "calendarEventId": null,
+      "updatedAt": "2026-08-01T10:21:00Z"
+    }
+  ],
+  "nextCursor": null
+}
