@@ -150,6 +150,7 @@ def run_pytest() -> bool:
 
 
 def main() -> int:
+    print(f"python {'.'.join(str(n) for n in sys.version_info[:3])}\n")
     files = tracked_files()
     results = [
         check_python_parses(files),

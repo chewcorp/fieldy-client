@@ -106,3 +106,19 @@ spelling or length, so detection is unchanged.
 The D6 text stays as written. It is now a live regression case for the
 false-positive path, sitting in the tree where any future change to the scan
 must keep it passing.
+
+## D8 — Supersedes D6 on dependency metadata
+
+**2026-09-12, third review round.** D6 states that `pyproject.toml` dependency
+metadata "is now checked". That is no longer true: the check was removed in
+021517b.
+
+It produced a finding in every round it existed — a pytest name match that
+accepted `pytest-cov`, unchecked optional extras that become runtime
+requirements on install, and a parse fallback that passed silently on Python
+3.10 — always about a file that does not exist yet. `AGENTS.md` caps
+remediation at three rounds and calls for a structural answer over further
+site patching; the structural answer was that the check was speculative.
+
+Dependency metadata is now unenforced by design. `AGENTS.md` says so, and
+carries the requirement for whoever writes `pyproject.toml`.

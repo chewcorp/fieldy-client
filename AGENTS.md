@@ -123,7 +123,12 @@ context stays the default whenever self-review would be material.
 
 ## Checks
 
-`python scripts/check.py` is the single entry point, and CI runs exactly that.
+`python scripts/check.py` is the single entry point, and CI runs exactly that
+script. CI pins Python 3.12; run the same minor version locally, because the
+stdlib allowlist comes from the running interpreter and a newer one accepts
+imports CI rejects. The script prints its interpreter version — quote it in
+handoff evidence.
+
 It must stay offline, deterministic, and runnable from a clean clone with
 `pytest` installed. Encode a new mechanical rule there rather than in the
 review rules below.
