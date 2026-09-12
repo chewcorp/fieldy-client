@@ -71,9 +71,12 @@ why.
 ## Working rules
 
 - Python, standard library only at runtime (`urllib.request` + `json`).
-  `pytest` is the only development dependency.
-- Keep every script runnable as `python scripts/<name>.py` on any OS. No
-  shell-only steps, no hard-coded POSIX paths.
+  `scripts/check.py` enforces this for imports and for declared runtime
+  dependencies. `pytest` is the only development dependency; that part is a
+  convention, not a mechanical check.
+- Keep every script runnable as `python <path>` on any OS — `scripts/check.py`
+  at the repo root, `smoke.py`, `tools/refresh_ops.py`. No shell-only steps,
+  no hard-coded POSIX paths.
 - Auth reads `FIELDY_API_KEY` from the environment, overridable by a
   constructor argument for tests. Header construction stays in one
   `_auth_headers()` method.

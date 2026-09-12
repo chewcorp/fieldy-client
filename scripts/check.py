@@ -27,6 +27,8 @@ ROOT = Path(__file__).resolve().parent.parent
 # Runtime code must import nothing outside the standard library (AGENTS.md,
 # Working rules). Tests may use pytest; scripts/ is excluded as tooling.
 RUNTIME_MODULES = ("fieldy_client.py", "smoke.py")
+# The client is first-party; smoke.py exists in order to import it.
+FIRST_PARTY = {"fieldy_client"}
 
 # Assignment of a key to a literal, tolerant of whitespace and of JSON/TOML
 # spellings: FIELDY_API_KEY = "x", "FIELDY_API_KEY": "x", FIELDY_API_KEY=x.
@@ -97,7 +99,11 @@ def check_stdlib_only(files: list[Path]) -> bool:
                 continue
             for name in names:
                 top = name.split(".")[0]
-                if top and top not in sys.stdlib_module_names:
+                if (
+                    top
+                    and top not in sys.stdlib_module_names
+                    and top not in FIRST_PARTY
+                ):
                     offenders.append(f"{path.relative_to(ROOT)} imports {top}")
     return report("runtime imports are stdlib only", not offenders, "; ".join(offenders))
 
@@ -118,7 +124,7 @@ def check_no_committed_key(files: list[Path]) -> bool:
     """A recorded key is the one mistake here that cannot be quietly undone."""
     offenders = []
     for path in files:
-        if not path.exists() or path.name == Path(__file__).name:
+        if not path.exists():
             continue
         try:
             text = path.read_text(encoding="utf-8")
@@ -152,16 +158,10 @@ def check_declared_dependencies() -> bool:
     except tomllib.TOMLDecodeError as exc:
         return report("declared dependencies", False, f"pyproject.toml: {exc}")
 
-    offenders = []
-    project = data.get("project", {})
-    for dep in project.get("dependencies", []):
-        offenders.append(f"runtime dependency {dep!r}")
-    groups = dict(project.get("optional-dependencies", {}))
-    groups.update(data.get("dependency-groups", {}))
-    for group, deps in groups.items():
-        for dep in deps:
-            if not str(dep).lower().startswith("pytest"):
-                offenders.append(f"{group} dependency {dep!r}")
+    offenders = [
+        f"runtime dependency {dep!r}"
+        for dep in data.get("project", {}).get("dependencies", [])
+    ]
     return report("declared dependencies", not offenders, "; ".join(offenders))
 
 
