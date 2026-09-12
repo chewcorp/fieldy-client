@@ -1,0 +1,182 @@
+# Agent instructions — fieldy-client
+
+A thin Python wrapper around the Fieldy public API v2
+(`https://api.fieldy.ai/api/public/v2`) for agents that need Fieldy data and
+summaries without an MCP dependency.
+
+This file is the canonical standing rules for **every** agent harness (Codex,
+Claude Code, Cursor, Gemini/Antigravity, and others). Harness files add only
+invocation details; they never restate or override a rule from here.
+
+This file states rules, not the reasoning behind them. Decisions and their
+rationale go in `docs/decisions.md`.
+
+## Sources of truth
+
+- **CCP-629** (mirrored as chewcorp/chewcorp-tracker#151) owns scope,
+  non-goals, and acceptance criteria.
+- **The published OpenAPI spec** owns API facts: resources, parameters, auth,
+  and response shape. Extract it per `docs/open-questions.md`.
+
+Where this file disagrees with CCP-629, CCP-629 wins and this file is wrong;
+say so. Where CCP-629 asserts an API fact the spec contradicts, the spec wins:
+record the divergence in `docs/open-questions.md` and proceed. Do not escalate
+that as a decision.
+
+## Scope guard
+
+This repository is one module of roughly 150 lines. Out of scope:
+
+- governance framework, multi-service platform, MCP rewrite;
+- async variant, pagination iterators, response model classes, caching layer,
+  plugin interface, or any retry policy beyond one 429 retry honouring
+  `Retry-After`;
+- third-party runtime dependencies, a `src/` layout, a package directory, or a
+  client/transport/model split.
+
+Dicts in, dicts out. If a change needs one of the above, stop and put the
+trade-off to the human owner. Do not add it and mention it in the pull request
+body.
+
+## Layout (fixed)
+
+Deliverable, per CCP-629:
+
+| Path | Holds |
+| --- | --- |
+| `fieldy_client.py` | Client, `OPS` catalog, `__main__` CLI. One module. |
+| `tests/test_client.py` | pytest over recorded fixtures with a stubbed opener. |
+| `tests/fixtures/*.json` | Recorded responses. No live API in tests. |
+| `pyproject.toml` | Packaging and pytest config. Written by the implementer. |
+| `smoke.py` | Hand-run check against the real API. Never runs in CI. |
+| `README.md` | Auth → Discover → Call, one screen or less. |
+| `tools/refresh_ops.py` | Generates `OPS` from the spec. |
+
+Scaffold:
+
+| Path | Holds |
+| --- | --- |
+| `AGENTS.md` | These rules. Canonical for every harness. |
+| `CLAUDE.md`, `GEMINI.md` | Harness adapters. Invocation details only. |
+| `scripts/check.py` | The one check entry point. |
+| `.github/workflows/checks.yml` | CI. Runs `scripts/check.py` and nothing else. |
+| `docs/acceptance.md` | Per-criterion evidence ledger. |
+| `docs/open-questions.md` | API facts and the evidence that settled them. |
+| `docs/decisions.md` | Decisions taken and why. |
+| `.gitignore` | Build and tooling artefacts kept out of the tree. |
+
+Before adding a file outside these tables, say which table it belongs in and
+why.
+
+## Working rules
+
+- Python, standard library only at runtime (`urllib.request` + `json`).
+  `scripts/check.py` enforces this for imports in `fieldy_client.py` and
+  `smoke.py`. `pytest` is the only development dependency. Neither the
+  dependency metadata nor the pytest-only rule is mechanically checked.
+- When you add `pyproject.toml`, add a check to `scripts/check.py` that
+  `project.dependencies` and every `project.optional-dependencies` group are
+  empty — extras become runtime requirements when installed. Write it against
+  the real file, and make it fail rather than skip when it cannot parse.
+- Keep every script runnable as `python <path>` on any OS — `scripts/check.py`
+  at the repo root, `smoke.py`, `tools/refresh_ops.py`. No shell-only steps,
+  no hard-coded POSIX paths.
+- Auth reads `FIELDY_API_KEY` from the environment, overridable by a
+  constructor argument for tests. Header construction stays in one
+  `_auth_headers()` method.
+- Never commit an API key, nor a fixture you have not read. Recorded responses
+  carry real conversation content: scrub them first.
+- Tests and CI run against recorded fixtures, never the live API. Do not wire
+  a live call into `scripts/check.py`.
+- Use network egress to resolve API facts and to run `smoke.py`. If your
+  environment cannot reach `api.fieldy.ai`, say so and escalate; do not guess
+  at a response shape.
+- Read `docs/open-questions.md` before writing code that touches the request
+  or response shape. Close a row with either the published spec or a request
+  and its response; one suffices, and both are recorded the same way. If a row
+  is open, implement behind the agreed seam and declare it unverified in the
+  handoff.
+- Do not push to `main`. Branch from the work item's `gitBranchName` and open
+  a pull request.
+
+## Delivery loop
+
+1. Plan against the current acceptance criteria. Report blockers and defective
+   criteria before implementing; never rewrite a criterion silently.
+2. Implement on a branch. Run `python scripts/check.py` and hand off a compact
+   evidence summary — branch, commit, checks run, files touched — not a
+   transcript.
+3. Review in a **fresh context** that did not plan or implement the change.
+   Give the reviewer the integration base, changed paths, declared scope,
+   these rules, and the check evidence; not the debugging history or the
+   author's rationale for a shortcut.
+4. Cap review and remediation at **three rounds**. If a finding class recurs,
+   stop patching sites: escalate a structural fix or a human decision.
+5. Verify each acceptance criterion in `docs/acceptance.md` as pass, fail, or
+   unproven, with specific evidence. A green check is not evidence that a call
+   against the real API works.
+6. Merge, closure, and acceptance are the human owner's decisions. Agent
+   approval is not acceptance.
+
+For a trivial reversible change, do not stage every role. The fresh review
+context stays the default whenever self-review would be material.
+
+## Checks
+
+`python scripts/check.py` is the single entry point, and CI runs exactly that
+script. CI pins Python 3.12; run the same minor version locally, because the
+stdlib allowlist comes from the running interpreter and a newer one accepts
+imports CI rejects. The script prints its interpreter version — quote it in
+handoff evidence.
+
+It must stay offline, deterministic, and runnable from a clean clone with
+`pytest` installed. Encode a new mechanical rule there rather than in the
+review rules below.
+
+## Code Review Rules
+
+### Review calibration
+
+- Scope review to the maturity and risk of the changed surface. Apply full
+  behavioural scrutiny to shipping code, fixtures, scripts, and workflows. For
+  proposed or unwired material, check stage-appropriate completeness, internal
+  consistency, claims about current behaviour, and runnable commands; do not
+  require implementation explicitly deferred to a later decision.
+- Trace a changed invariant through affected consumers before commenting. One
+  shared root cause gets one structural finding listing the affected sites and
+  the canonical enforcement point. Keep unrelated causes separate.
+- Make each finding independently checkable: state one defect, its exact
+  evidence or verification path, its consequence, and the smallest safe
+  remedy. On later rounds, retain prior dispositions, label causal follow-ons,
+  and escalate repeated classes structurally instead of rediscovering sites.
+  Declare convergence only when no prior blocking finding remains unresolved
+  and a complete changed-surface pass finds no actionable finding, whether new
+  or recurring.
+
+### Repository specifics
+
+- Treat the scope guard as a review criterion. A change that adds a runtime
+  dependency, a layer, a module, or an extensibility seam is a blocking
+  finding unless the pull request cites the decision in `docs/decisions.md`
+  that admitted it.
+- Check claims about the Fieldy API against `docs/open-questions.md`. When a
+  change depends on an open row, the finding is that the dependency is
+  undeclared, not that the guess is wrong.
+- Tests must be able to fail. For a new or changed test over fixtures, state
+  how you established that it fails under a targeted contrary change, or
+  record that you could not.
+
+Mechanical formatting and policy checks belong in `scripts/check.py`, not
+here.
+
+## Harness adapters
+
+| Harness | Rules entry | Adds |
+| --- | --- | --- |
+| Codex / OpenAI | this file | read natively |
+| Cursor | this file | read natively |
+| Claude Code | `CLAUDE.md` | invocation details only |
+| Gemini / Antigravity | `GEMINI.md` | invocation details only |
+
+An adapter holding a rule that is not in this file is a defect: move the rule
+here.
