@@ -63,6 +63,7 @@ Scaffold:
 | `docs/acceptance.md` | Per-criterion evidence ledger. |
 | `docs/open-questions.md` | API facts and the evidence that settled them. |
 | `docs/decisions.md` | Decisions taken and why. |
+| `.gitignore` | Build and tooling artefacts kept out of the tree. |
 
 Before adding a file outside these tables, say which table it belongs in and
 why.
@@ -84,8 +85,10 @@ why.
   environment cannot reach `api.fieldy.ai`, say so and escalate; do not guess
   at a response shape.
 - Read `docs/open-questions.md` before writing code that touches the request
-  or response shape. If a row there is open, either close it with evidence or
-  implement behind the agreed seam and declare it unverified in the handoff.
+  or response shape. Close a row with either the published spec or a request
+  and its response; one suffices, and both are recorded the same way. If a row
+  is open, implement behind the agreed seam and declare it unverified in the
+  handoff.
 - Do not push to `main`. Branch from the work item's `gitBranchName` and open
   a pull request.
 

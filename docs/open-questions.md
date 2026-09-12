@@ -4,10 +4,10 @@ Facts about the Fieldy public API. Each row is a blank in the design, not a
 design decision — see the implementation-design comment on
 [CCP-629](https://linear.app/chewcorp/issue/CCP-629).
 
-Do not close a row from inference or from a plausible convention. Close it
-with evidence: Fieldy's published documentation, or one authenticated request
-and its response. Until a row is closed, code that depends on it says so at
-the call site and in the handoff.
+Do not close a row from inference or from a plausible convention. `AGENTS.md`
+sets the evidence threshold; this file records what was actually observed.
+Until a row is closed, code that depends on it says so at the call site and in
+the handoff.
 
 | # | Question | Status |
 | --- | --- | --- |

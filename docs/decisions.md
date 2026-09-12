@@ -65,3 +65,28 @@ reasoning behind each rule inline, including the history of D3 and D4. Rules
 and their justification compete for an agent's attention, and a rule that
 arrives with its own argument invites re-litigation. `AGENTS.md` now states
 rules; this file holds the decisions.
+
+## D6 — Policy lives only in AGENTS.md; the mechanical checks enforce what they advertise
+
+**2026-09-12, automated review of PR #1.** Two classes of finding, both
+accepted.
+
+Policy had leaked out of the canonical file: the harness adapters each carried
+a standing implementation rule, and the evidence threshold for closing an API
+question was set in `docs/open-questions.md`. Both made a non-canonical file a
+secondary policy source that could drift. The adapters now carry invocation
+detail only; the threshold is stated once in `AGENTS.md` and the ledger records
+observations against it.
+
+`scripts/check.py` claimed enforcement it did not deliver. Its key scan matched
+three exact substrings, so the conventional `FIELDY_API_KEY = "…"` spelling
+passed; it now matches assignments tolerant of whitespace and JSON/TOML
+spellings, and flags the issued-key prefix wherever it appears with a body.
+Import scanning also missed the installation surface, so a declared runtime
+dependency in `pyproject.toml` would have passed the no-dependency rule; that
+metadata is now checked too. Dynamically loaded dependencies remain outside
+what a static check can see.
+
+`.gitignore` was added by the first scaffold commit without appearing in either
+layout table, leaving the scope contract inconsistent from the start. It is now
+listed.

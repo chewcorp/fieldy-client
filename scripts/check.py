@@ -12,9 +12,15 @@ from __future__ import annotations
 
 import ast
 import json
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+try:
+    import tomllib
+except ModuleNotFoundError:  # Python < 3.11
+    tomllib = None
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -22,7 +28,19 @@ ROOT = Path(__file__).resolve().parent.parent
 # Working rules). Tests may use pytest; scripts/ is excluded as tooling.
 RUNTIME_MODULES = ("fieldy_client.py", "smoke.py")
 
-SECRET_MARKERS = ("FIELDY_API_KEY=", 'FIELDY_API_KEY"', "FIELDY_API_KEY'")
+# Assignment of a key to a literal, tolerant of whitespace and of JSON/TOML
+# spellings: FIELDY_API_KEY = "x", "FIELDY_API_KEY": "x", FIELDY_API_KEY=x.
+KEY_ASSIGNMENT = re.compile(
+    r"""FIELDY_API_KEY["']?\s*[:=]\s*(?P<value>[^\s,;)}\]]+)""", re.IGNORECASE
+)
+# The issued-key prefix is a positive signal wherever it appears with a body.
+KEY_LITERAL = re.compile(r"sk-fieldy-[A-Za-z0-9_-]{8,}")
+# Values that are obviously not a key: placeholders and environment lookups.
+NOT_A_KEY = re.compile(
+    r"^(<|\$|\{|os\.|getenv|environ|none|null|\.\.\.)|"
+    r"(your|example|placeholder|dummy|fake|xxx|test)",
+    re.IGNORECASE,
+)
 
 
 def report(name: str, ok: bool, detail: str = "") -> bool:
@@ -103,13 +121,45 @@ def check_no_committed_key(files: list[Path]) -> bool:
             text = path.read_text(encoding="utf-8")
         except (UnicodeDecodeError, OSError):
             continue
-        for marker in SECRET_MARKERS:
-            for line in text.splitlines():
-                head, sep, tail = line.partition(marker)
-                if sep and tail.strip(" \"'=:)]},").rstrip():
-                    offenders.append(f"{path.relative_to(ROOT)}: {line.strip()[:60]}")
-                    break
-    return report("no API key assigned in a tracked file", not offenders, "; ".join(offenders))
+        for lineno, line in enumerate(text.splitlines(), 1):
+            hit = None
+            if KEY_LITERAL.search(line):
+                hit = "issued-key prefix with a body"
+            else:
+                match = KEY_ASSIGNMENT.search(line)
+                if match:
+                    value = match.group("value").strip("\"'`")
+                    if value and not NOT_A_KEY.search(value):
+                        hit = "key assigned to a literal"
+            if hit:
+                offenders.append(f"{path.relative_to(ROOT)}:{lineno} {hit}")
+                break
+    return report("no API key in a tracked file", not offenders, "; ".join(offenders))
+
+
+def check_declared_dependencies() -> bool:
+    """Imports are only half the surface; installing must pull nothing either."""
+    pyproject = ROOT / "pyproject.toml"
+    if not pyproject.exists():
+        return report("declared dependencies", True, "no pyproject.toml yet")
+    if tomllib is None:
+        return report("declared dependencies", True, "needs Python 3.11+ to parse")
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as exc:
+        return report("declared dependencies", False, f"pyproject.toml: {exc}")
+
+    offenders = []
+    project = data.get("project", {})
+    for dep in project.get("dependencies", []):
+        offenders.append(f"runtime dependency {dep!r}")
+    groups = dict(project.get("optional-dependencies", {}))
+    groups.update(data.get("dependency-groups", {}))
+    for group, deps in groups.items():
+        for dep in deps:
+            if not str(dep).lower().startswith("pytest"):
+                offenders.append(f"{group} dependency {dep!r}")
+    return report("declared dependencies", not offenders, "; ".join(offenders))
 
 
 def run_pytest() -> bool:
@@ -127,6 +177,7 @@ def main() -> int:
         check_stdlib_only(files),
         check_fixtures_parse(files),
         check_no_committed_key(files),
+        check_declared_dependencies(),
         run_pytest(),
     ]
     ok = all(results)
