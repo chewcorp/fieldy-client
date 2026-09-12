@@ -4,47 +4,39 @@ A thin Python wrapper around the Fieldy public API v2
 (`https://api.fieldy.ai/api/public/v2`) for agents that need Fieldy data and
 summaries without an MCP dependency.
 
-The authoritative specification is Linear **CCP-629** (mirrored as
-chewcorp/chewcorp-tracker#151), including its implementation-design comment.
-Where this file and CCP-629 disagree, CCP-629 wins and this file is wrong —
-say so rather than working around it.
-
-Precedence is split, and the split matters:
-
-- **CCP-629 owns** scope, non-goals, and acceptance criteria.
-- **The published OpenAPI spec owns** API facts — resources, parameters, auth,
-  response shape.
-
-Where the design comment asserts an API fact the spec contradicts, the spec
-wins and the design comment was a guess. It was written by an agent that
-recorded its own lack of access to the API, so it is not evidence about the
-API. Record the divergence in `docs/open-questions.md` and move on; do not
-escalate it as a decision, and do not preserve the guess out of deference to
-the issue.
-
 This file is the canonical standing rules for **every** agent harness (Codex,
 Claude Code, Cursor, Gemini/Antigravity, and others). Harness files add only
 invocation details; they never restate or override a rule from here.
 
+This file states rules, not the reasoning behind them. Decisions and their
+rationale go in `docs/decisions.md`.
+
+## Sources of truth
+
+- **CCP-629** (mirrored as chewcorp/chewcorp-tracker#151) owns scope,
+  non-goals, and acceptance criteria.
+- **The published OpenAPI spec** owns API facts: resources, parameters, auth,
+  and response shape. Extract it per `docs/open-questions.md`.
+
+Where this file disagrees with CCP-629, CCP-629 wins and this file is wrong;
+say so. Where CCP-629 asserts an API fact the spec contradicts, the spec wins:
+record the divergence in `docs/open-questions.md` and proceed. Do not escalate
+that as a decision.
+
 ## Scope guard
 
-This repository is deliberately small — roughly one 150-line module. The
-dominant delivery risk is not a missing feature; it is a plausible addition
-that turns that module into a framework.
+This repository is one module of roughly 150 lines. Out of scope:
 
-Out of scope by decision, not by omission:
-
-- governance framework, multi-service platform, MCP rewrite (stated
-  non-goals);
+- governance framework, multi-service platform, MCP rewrite;
 - async variant, pagination iterators, response model classes, caching layer,
   plugin interface, or any retry policy beyond one 429 retry honouring
   `Retry-After`;
 - third-party runtime dependencies, a `src/` layout, a package directory, or a
   client/transport/model split.
 
-Dicts in, dicts out. If a change needs one of the above to work, stop and put
-the trade-off to the human owner; do not add it and mention it in the pull
-request body.
+Dicts in, dicts out. If a change needs one of the above, stop and put the
+trade-off to the human owner. Do not add it and mention it in the pull request
+body.
 
 ## Layout (fixed)
 
@@ -58,7 +50,7 @@ Deliverable, per CCP-629:
 | `pyproject.toml` | Packaging and pytest config. Written by the implementer. |
 | `smoke.py` | Hand-run check against the real API. Never runs in CI. |
 | `README.md` | Auth → Discover → Call, one screen or less. |
-| `tools/refresh_ops.py` | Generates `OPS` from the spec. Admitted: v2 does serve OpenAPI. |
+| `tools/refresh_ops.py` | Generates `OPS` from the spec. |
 
 Scaffold:
 
@@ -69,10 +61,11 @@ Scaffold:
 | `scripts/check.py` | The one check entry point. |
 | `.github/workflows/checks.yml` | CI. Runs `scripts/check.py` and nothing else. |
 | `docs/acceptance.md` | Per-criterion evidence ledger. |
-| `docs/open-questions.md` | Facts not yet resolved from Fieldy's docs. |
+| `docs/open-questions.md` | API facts and the evidence that settled them. |
+| `docs/decisions.md` | Decisions taken and why. |
 
-Adding a file outside these tables is a scope decision, not a detail. Say
-which table it belongs in and why before you add it.
+Before adding a file outside these tables, say which table it belongs in and
+why.
 
 ## Working rules
 
@@ -82,34 +75,19 @@ which table it belongs in and why before you add it.
   shell-only steps, no hard-coded POSIX paths.
 - Auth reads `FIELDY_API_KEY` from the environment, overridable by a
   constructor argument for tests. Header construction stays in one
-  `_auth_headers()` method so the format is a one-line change.
+  `_auth_headers()` method.
 - Never commit an API key, nor a fixture you have not read. Recorded responses
-  carry real conversation content: scrub them before they are committed.
-- Tests and CI stay offline and deterministic: they run against recorded
-  fixtures, never the live API, because CI holds no API key. That is a design
-  choice, not an environment limit — this host and the GitHub Actions runner
-  both reach `api.fieldy.ai`. Use that egress to resolve facts and to run
-  `smoke.py`; do not wire a live call into `scripts/check.py`.
-- Some agent sandboxes do refuse `api.fieldy.ai` (403 on CONNECT), and the
-  Fieldy MCP server has returned 429. If you cannot reach the host, that is
-  your environment, not the repository's assumption — say so and escalate
-  rather than guessing at a response shape.
+  carry real conversation content: scrub them first.
+- Tests and CI run against recorded fixtures, never the live API. Do not wire
+  a live call into `scripts/check.py`.
+- Use network egress to resolve API facts and to run `smoke.py`. If your
+  environment cannot reach `api.fieldy.ai`, say so and escalate; do not guess
+  at a response shape.
+- Read `docs/open-questions.md` before writing code that touches the request
+  or response shape. If a row there is open, either close it with evidence or
+  implement behind the agreed seam and declare it unverified in the handoff.
 - Do not push to `main`. Branch from the work item's `gitBranchName` and open
   a pull request.
-
-## Unresolved facts
-
-`docs/open-questions.md` is the ledger; read it before writing code that
-touches the request or response shape. As of 2026-09-12 every row is closed
-with recorded evidence, including the resource naming: the records live under
-`/conversations`, and the catalog uses the API's own vocabulary rather than
-the design comment's `memories` wording.
-
-Do not silently guess a row that later re-opens. Either close it with evidence
-— published docs, or one request and its response — or implement behind the
-agreed seam, leave the row open, and say plainly in the handoff that it is
-unverified. An unverified assumption presented as settled is the failure this
-section exists to prevent.
 
 ## Delivery loop
 
@@ -142,8 +120,6 @@ review rules below.
 
 ## Code Review Rules
 
-Baseline adapted from `xchewtoyx/review-guidance` (candidate status).
-
 ### Review calibration
 
 - Scope review to the maturity and risk of the changed surface. Apply full
@@ -166,10 +142,10 @@ Baseline adapted from `xchewtoyx/review-guidance` (candidate status).
 
 - Treat the scope guard as a review criterion. A change that adds a runtime
   dependency, a layer, a module, or an extensibility seam is a blocking
-  finding unless the pull request cites the decision that admitted it —
-  however good the addition is on its own terms.
+  finding unless the pull request cites the decision in `docs/decisions.md`
+  that admitted it.
 - Check claims about the Fieldy API against `docs/open-questions.md`. When a
-  change depends on an unresolved fact, the finding is that the dependency is
+  change depends on an open row, the finding is that the dependency is
   undeclared, not that the guess is wrong.
 - Tests must be able to fail. For a new or changed test over fixtures, state
   how you established that it fails under a targeted contrary change, or

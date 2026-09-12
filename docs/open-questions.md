@@ -41,35 +41,25 @@ python -c "import json,re,html;raw=open('docs.html').read();cfg=json.loads(html.
 
 ## Row 4 — resource naming
 
-The design comment specifies `list_memories()`, `get_memory(id)`, and "the
-server-side summary Fieldy already produces per memory". Public v2 has no
-`memories` resource. Its resources are `conversations`, `transcriptions`,
-`tasks`, `speaker-profiles`, `memory-templates`, `sharables`, and `user`.
-`memory-templates` is a different concept — templates, not records.
+Public v2 has no `memories` resource. Its resources are `conversations`,
+`transcriptions`, `tasks`, `speaker-profiles`, `memory-templates`,
+`sharables`, and `user`; `memory-templates` is templates, not records. The
+conversation object carries the fields CCP-629's design comment expected from
+a "memory".
 
-**Resolved 2026-09-12 by the owner: the published spec wins.** The resource is
-`conversations`, and the catalog uses the API's own vocabulary. This was never
-a real question. The design comment was written by an agent that recorded its
-own lack of access to the API — it listed these three facts as "resolve before
-coding" and noted the host was proxy-refused. A source that documents it could
-not reach the docs is not evidence about what the docs say.
+Closed 2026-09-12: the resource is `conversations`, and the catalog uses the
+API's own vocabulary. See `docs/decisions.md` D4.
 
-The conversation object carries the fields the design wanted from a "memory",
-so nothing about the client's shape changes. Do not re-open this to preserve
-the design's wording.
-
-Two constraints the design does not mention, which the spec does:
+Two constraints the design comment does not mention, which the spec states:
 
 - `startTime` and `endTime` are **required** query parameters on
   `GET /conversations`. A listing method cannot default to "everything"; the
   caller must supply a window.
 - Items carry a `locked` boolean — content redacted by the free-plan history
-  window. An agent reading `summary` must handle a locked item rather than
-  treating a null summary as "no summary".
+  window. A null `summary` on a locked item means redacted, not absent.
 
 ## Environment
 
-This host and the GitHub Actions runner both reach `api.fieldy.ai`. Some agent
-sandboxes refuse it (403 on CONNECT), which is what the original design note
-recorded. Tests and CI stay offline because CI holds no API key, not because
-the host is unreachable.
+A normal developer host and the GitHub Actions runner both reach
+`api.fieldy.ai`; some agent sandboxes refuse it (403 on CONNECT). See
+`docs/decisions.md` D3 for why tests and CI stay offline regardless.
