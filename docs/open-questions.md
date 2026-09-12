@@ -14,7 +14,7 @@ the call site and in the handoff.
 | 1 | Auth header name and format | **resolved** — `Authorization: Bearer sk-fieldy-<key>` |
 | 2 | Does `api/public/v2` serve an OpenAPI document? | **resolved** — yes, OpenAPI 3.1.1, API version 2.0.0 |
 | 3 | Summary on the object, or its own endpoint? | **resolved** — on the object; `summary` is a field of each `GET /conversations` item |
-| 4 | The design names a `memories` resource that v2 does not have | **open** — see below |
+| 4 | The design names a `memories` resource that v2 does not have | **resolved** — the spec wins; the resource is `conversations` |
 
 ## Evidence for rows 1–3
 
@@ -39,7 +39,7 @@ python -c "import json,re,html;raw=open('docs.html').read();cfg=json.loads(html.
   and `quotes`. So `summaries()` is a projection over one response, not a
   second call.
 
-## Row 4 — resource naming defect
+## Row 4 — resource naming
 
 The design comment specifies `list_memories()`, `get_memory(id)`, and "the
 server-side summary Fieldy already produces per memory". Public v2 has no
@@ -47,21 +47,24 @@ server-side summary Fieldy already produces per memory". Public v2 has no
 `tasks`, `speaker-profiles`, `memory-templates`, `sharables`, and `user`.
 `memory-templates` is a different concept — templates, not records.
 
-The conversation object carries exactly the fields the design wants from a
-"memory", so this reads as naming drift rather than a missing capability. It
-is still a criteria defect, not a detail an implementer should quietly
-resolve: the named consumer is agents doing self-discovery, and a method
-catalog whose names do not match the API's own vocabulary is the thing that
-makes discovery fail.
+**Resolved 2026-09-12 by the owner: the published spec wins.** The resource is
+`conversations`, and the catalog uses the API's own vocabulary. This was never
+a real question. The design comment was written by an agent that recorded its
+own lack of access to the API — it listed these three facts as "resolve before
+coding" and noted the host was proxy-refused. A source that documents it could
+not reach the docs is not evidence about what the docs say.
 
-Escalate to the human owner before coding. Two further constraints the design
-does not mention, worth settling in the same pass:
+The conversation object carries the fields the design wanted from a "memory",
+so nothing about the client's shape changes. Do not re-open this to preserve
+the design's wording.
+
+Two constraints the design does not mention, which the spec does:
 
 - `startTime` and `endTime` are **required** query parameters on
-  `GET /conversations`. `list_*(since=, until=, limit=)` cannot default to
-  "everything"; the caller must supply a window.
+  `GET /conversations`. A listing method cannot default to "everything"; the
+  caller must supply a window.
 - Items carry a `locked` boolean — content redacted by the free-plan history
-  window. An agent reading `summary` needs to handle a locked item rather than
+  window. An agent reading `summary` must handle a locked item rather than
   treating a null summary as "no summary".
 
 ## Environment

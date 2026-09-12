@@ -9,6 +9,19 @@ chewcorp/chewcorp-tracker#151), including its implementation-design comment.
 Where this file and CCP-629 disagree, CCP-629 wins and this file is wrong —
 say so rather than working around it.
 
+Precedence is split, and the split matters:
+
+- **CCP-629 owns** scope, non-goals, and acceptance criteria.
+- **The published OpenAPI spec owns** API facts — resources, parameters, auth,
+  response shape.
+
+Where the design comment asserts an API fact the spec contradicts, the spec
+wins and the design comment was a guess. It was written by an agent that
+recorded its own lack of access to the API, so it is not evidence about the
+API. Record the divergence in `docs/open-questions.md` and move on; do not
+escalate it as a decision, and do not preserve the guess out of deference to
+the issue.
+
 This file is the canonical standing rules for **every** agent harness (Codex,
 Claude Code, Cursor, Gemini/Antigravity, and others). Harness files add only
 invocation details; they never restate or override a rule from here.
@@ -87,18 +100,16 @@ which table it belongs in and why before you add it.
 ## Unresolved facts
 
 `docs/open-questions.md` is the ledger; read it before writing code that
-touches the request or response shape. As of 2026-09-12 the auth header, the
-OpenAPI question, and the summary's location are **resolved** from the
-published spec. One row is **open and blocking**: the design specifies a
-`memories` resource that public v2 does not have — the records live under
-`/conversations`. That is a criteria defect for the human owner, not a rename
-an implementer makes in passing.
+touches the request or response shape. As of 2026-09-12 every row is closed
+with recorded evidence, including the resource naming: the records live under
+`/conversations`, and the catalog uses the API's own vocabulary rather than
+the design comment's `memories` wording.
 
-Do not silently guess an open row. Either close it with evidence — published
-docs, or one request and its response — or implement behind the agreed seam,
-leave the row open, and say plainly in the handoff that it is unverified. An
-unverified assumption presented as settled is the failure this section exists
-to prevent.
+Do not silently guess a row that later re-opens. Either close it with evidence
+— published docs, or one request and its response — or implement behind the
+agreed seam, leave the row open, and say plainly in the handoff that it is
+unverified. An unverified assumption presented as settled is the failure this
+section exists to prevent.
 
 ## Delivery loop
 
