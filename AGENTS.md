@@ -45,7 +45,7 @@ Deliverable, per CCP-629:
 | `pyproject.toml` | Packaging and pytest config. Written by the implementer. |
 | `smoke.py` | Hand-run check against the real API. Never runs in CI. |
 | `README.md` | Auth → Discover → Call, one screen or less. |
-| `tools/refresh_ops.py` | Only if open question 2 resolves to "v2 serves OpenAPI". |
+| `tools/refresh_ops.py` | Generates `OPS` from the spec. Admitted: v2 does serve OpenAPI. |
 
 Scaffold:
 
@@ -86,15 +86,19 @@ which table it belongs in and why before you add it.
 
 ## Unresolved facts
 
-Three facts are not yet settled — see `docs/open-questions.md`: the auth
-header name and format, whether v2 serves an OpenAPI document, and whether the
-summary arrives on the memory object or from its own endpoint.
+`docs/open-questions.md` is the ledger; read it before writing code that
+touches the request or response shape. As of 2026-09-12 the auth header, the
+OpenAPI question, and the summary's location are **resolved** from the
+published spec. One row is **open and blocking**: the design specifies a
+`memories` resource that public v2 does not have — the records live under
+`/conversations`. That is a criteria defect for the human owner, not a rename
+an implementer makes in passing.
 
-Do not silently guess one. Either resolve it from Fieldy's published docs plus
-one authenticated request and record that evidence, or implement behind the
-agreed seam, mark it open, and say plainly in the handoff that it is
-unverified. An unverified assumption presented as settled is the failure this
-section exists to prevent.
+Do not silently guess an open row. Either close it with evidence — published
+docs, or one request and its response — or implement behind the agreed seam,
+leave the row open, and say plainly in the handoff that it is unverified. An
+unverified assumption presented as settled is the failure this section exists
+to prevent.
 
 ## Delivery loop
 
