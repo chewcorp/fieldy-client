@@ -141,6 +141,40 @@ def check_no_committed_key(files: list[Path]) -> bool:
     return report("no API key in a tracked file", not offenders, "; ".join(offenders))
 
 
+def check_declared_dependencies() -> bool:
+    """Empty project.dependencies and empty optional extras — written against
+    the real pyproject.toml. Fail closed if the file cannot be parsed.
+    """
+    pyproject = ROOT / "pyproject.toml"
+    if not pyproject.exists():
+        return report("declared dependencies are empty", False, "pyproject.toml is missing")
+    try:
+        import tomllib
+    except ModuleNotFoundError:
+        return report(
+            "declared dependencies are empty",
+            False,
+            f"needs Python 3.11+ to parse (running {sys.version_info.major}.{sys.version_info.minor})",
+        )
+    try:
+        data = tomllib.loads(pyproject.read_text(encoding="utf-8"))
+    except tomllib.TOMLDecodeError as exc:
+        return report("declared dependencies are empty", False, f"pyproject.toml: {exc}")
+
+    offenders = [
+        f"project.dependencies: {dep!r}"
+        for dep in data.get("project", {}).get("dependencies") or []
+    ]
+    extras = data.get("project", {}).get("optional-dependencies") or {}
+    if extras and not isinstance(extras, dict):
+        offenders.append("project.optional-dependencies is not a table")
+    elif isinstance(extras, dict):
+        for name, deps in extras.items():
+            for dep in deps or []:
+                offenders.append(f"project.optional-dependencies.{name}: {dep!r}")
+    return report("declared dependencies are empty", not offenders, "; ".join(offenders))
+
+
 def run_pytest() -> bool:
     tests = sorted((ROOT / "tests").glob("test_*.py")) if (ROOT / "tests").is_dir() else []
     if not tests:
@@ -157,6 +191,7 @@ def main() -> int:
         check_stdlib_only(files),
         check_fixtures_parse(files),
         check_no_committed_key(files),
+        check_declared_dependencies(),
         run_pytest(),
     ]
     ok = all(results)

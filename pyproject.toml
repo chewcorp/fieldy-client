@@ -1,0 +1,14 @@
+[project]
+name = "fieldy-client"
+version = "0.1.0"
+description = "Thin Fieldy public API v2 client for agents"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = []
+
+[tool.setuptools]
+py-modules = ["fieldy_client"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
