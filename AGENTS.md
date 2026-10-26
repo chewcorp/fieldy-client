@@ -60,6 +60,7 @@ Scaffold:
 | `CLAUDE.md`, `GEMINI.md` | Harness adapters. Invocation details only. |
 | `scripts/check.py` | The one check entry point. |
 | `.github/workflows/checks.yml` | CI. Runs `scripts/check.py` and nothing else. |
+| `.devcontainer/devcontainer.json` | Python 3.12 development environment with pytest and Python editor support. |
 | `docs/acceptance.md` | Per-criterion evidence ledger. |
 | `docs/open-questions.md` | API facts and the evidence that settled them. |
 | `docs/decisions.md` | Decisions taken and why. |

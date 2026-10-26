@@ -42,3 +42,14 @@ Unauthenticated observation, 2026-09-12, this implementation session:
 non-issued placeholder) returns `401 {"code":"UNAUTHORIZED","message":"No
 recognised credentials"}`. That confirms the host and auth scheme, not a
 successful summary call.
+
+## Agent Readiness — Dev Container
+
+Validation recorded 2026-10-26 for the development-container change. This is
+separate from the live API criteria above.
+
+| Criterion | Status | Evidence |
+| --- | --- | --- |
+| Python development container configured | pass | `.devcontainer/devcontainer.json` passes the official Dev Containers base JSON schema; a non-string image is rejected as a negative control. `docker manifest inspect mcr.microsoft.com/devcontainers/python:1-3.12-bookworm` confirms Linux amd64 and arm64 images. Configuration selects the non-root `vscode` user, Python/Pylance extensions, and pytest discovery. |
+| Development setup matches offline checks | pass | The configured `python -m pip install pytest` succeeds in an isolated host environment using Python 3.12.13. `python scripts/check.py` reports all policy checks passing and 15 tests passing. No runtime dependency or live API call was added. |
+| Container creation and editor attachment | unproven | Docker's Linux engine is not running on the validation host. `@devcontainers/cli` 0.89.0 `read-configuration` exits at `docker ps`; no container was started and extension installation was not observed. Verify with **Dev Containers: Reopen in Container**, then `python scripts/check.py`, on a Docker-enabled host. |

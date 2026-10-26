@@ -36,4 +36,8 @@ python -m fieldy_client summaries --startTime 2026-09-01T00:00:00Z --endTime 202
 python -m fieldy_client call conversations.get --id CONV_ID
 ```
 
+Development: with Docker running and the VS Code Dev Containers extension installed, use
+**Dev Containers: Reopen in Container**. The container uses Python 3.12 (matching CI),
+installs pytest, and enables Python language support and test discovery. No API key is needed for checks.
+
 Checks: `python scripts/check.py`. Live (needs a real key): `python smoke.py`.

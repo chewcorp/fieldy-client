@@ -66,3 +66,13 @@ line each is ~30 lines of generated catalog, which is why the file sits a
 little over that number. The handwritten client (auth, call, 429 retry,
 summaries projection, CLI) stays one class. Do not split into a package to
 chase the line count; regenerate `OPS` with `tools/refresh_ops.py`.
+
+## D6 — The development container mirrors the Python check environment
+
+**2026-10-26, readiness implementation.** Use the official Python 3.12
+Dev Containers image to match CI's interpreter minor version and install
+only pytest during container creation, just as CI does. Run as the image's
+non-root `vscode` user, with Python language support and pytest discovery.
+The CLI client needs no forwarded ports, extra services, or API credentials
+for offline development. The existing `python scripts/check.py` remains the
+single check entry point; container setup does not run the live smoke test.
